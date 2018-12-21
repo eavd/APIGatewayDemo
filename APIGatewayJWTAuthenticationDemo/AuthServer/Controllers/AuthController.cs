@@ -44,17 +44,24 @@
                     ValidAudience = _settings.Value.Aud,
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero,
-                    RequireExpirationTime = true,
-
+                    RequireExpirationTime = true
                 };
 
-                var jwt = new JwtSecurityToken(
+                var secret = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Value.TokenKey));
+
+                var signingCreds = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
+                var encryptingCreds = new EncryptingCredentials(secret, SecurityAlgorithms.Aes128KW, SecurityAlgorithms.Aes128CbcHmacSha256);
+                var handler = new JwtSecurityTokenHandler();
+
+                var jwt = handler.CreateJwtSecurityToken(
                     issuer: _settings.Value.Iss,
                     audience: _settings.Value.Aud,
-                    claims: claims,
+                    subject: new ClaimsIdentity(claims),
                     notBefore: now,
                     expires: now.Add(TimeSpan.FromMinutes(2)),
-                    signingCredentials: new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256)
+                    issuedAt: null,
+                    signingCredentials: signingCreds,
+                    encryptingCredentials: encryptingCreds
                 );
                 var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
                 var responseJson = new
@@ -77,5 +84,6 @@
         public string Secret { get; set; }
         public string Iss { get; set; }
         public string Aud { get; set; }
+        public string TokenKey { get; set; }
     }
 }

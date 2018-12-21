@@ -31,6 +31,7 @@
             var audienceConfig = Configuration.GetSection("Audience");
 
             var signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(audienceConfig["Secret"]));
+            var tokenKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(audienceConfig["TokenKey"]));
             var tokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
@@ -42,6 +43,7 @@
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero,
                 RequireExpirationTime = true,
+                TokenDecryptionKey = tokenKey
             };
 
             services.AddAuthentication(o =>
@@ -49,10 +51,10 @@
                 o.DefaultAuthenticateScheme = "TestKey";
             })
             .AddJwtBearer("TestKey", x =>
-             {
-                 x.RequireHttpsMetadata = false;
-                 x.TokenValidationParameters = tokenValidationParameters;
-             });
+            {
+                x.RequireHttpsMetadata = false;
+                x.TokenValidationParameters = tokenValidationParameters;
+            });
 
             services.AddOcelot(Configuration);
         }
